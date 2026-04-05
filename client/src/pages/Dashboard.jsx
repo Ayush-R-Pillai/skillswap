@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom'
 import {
   BookOpen,
+  Cable,
   Calendar,
   Check,
   ChevronLeft,
@@ -349,6 +350,14 @@ export default function Dashboard() {
                                     <Clock3 size={14} />
                                     {scheduledAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </span>
+                                  <Link
+                                    to={`/chat/${session.id}`}
+                                    className="pill-badge"
+                                    style={{ background: 'rgba(137,81,255,0.14)', borderColor: 'rgba(137,81,255,0.22)', color: '#dcd7ff' }}
+                                  >
+                                    <Cable size={14} />
+                                    Open chat
+                                  </Link>
                                 </div>
                               </div>
                             </div>
@@ -529,7 +538,13 @@ export default function Dashboard() {
                 <div className="glass-card soft" style={{ padding: '44px 28px', textAlign: 'center' }}>
                   <MessageSquare size={36} style={{ margin: '0 auto 12px', color: 'var(--cyan)' }} />
                   <div style={{ fontWeight: 700, marginBottom: '6px' }}>No conversations yet</div>
-                  <div style={{ color: 'var(--muted)' }}>When learners and teachers start matching, this space can expand into inbox, threads, and quick actions.</div>
+                  <div style={{ color: 'var(--muted)', marginBottom: '14px' }}>Confirmed sessions unlock a dedicated realtime chat between learner and teacher.</div>
+                  {upcoming[0] && (
+                    <Link to={`/chat/${upcoming[0].id}`} className="gradient-button" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <Cable size={16} />
+                      Open latest chat
+                    </Link>
+                  )}
                 </div>
               </section>
             )}

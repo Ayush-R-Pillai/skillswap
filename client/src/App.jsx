@@ -8,6 +8,7 @@ import Register from './pages/Register'
 import Profile from './pages/Profile'
 import Dashboard from './pages/Dashboard'
 import SessionRequest from './pages/SessionRequest'
+import ChatPage from './pages/ChatPage'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/profile/:id" element={<Profile />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/session/request/:id" element={<SessionRequest />} />
+            <Route path="/chat/:sessionId" element={<ChatPage />} />
           </Routes>
         </div>
       </BrowserRouter>

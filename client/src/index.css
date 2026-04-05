@@ -394,6 +394,14 @@ img {
   gap: 20px;
 }
 
+.chat-layout {
+  width: 100%;
+  min-height: calc(100vh - 220px);
+  display: grid;
+  grid-template-columns: minmax(320px, 30%) minmax(0, 1fr);
+  gap: 22px;
+}
+
 .skill-card {
   position: relative;
   overflow: hidden;
@@ -563,6 +571,10 @@ img {
 
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chat-layout {
+    grid-template-columns: 1fr;
   }
 }
 

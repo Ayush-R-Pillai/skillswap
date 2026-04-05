@@ -5,7 +5,7 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 
 const {
-  getDoc, getDocs, addDoc,
+  db, admin, getDoc, getDocs, addDoc,
   updateDoc, deleteDoc, queryDocs,
 } = require('./firebase');
 
@@ -34,6 +34,71 @@ const protect = (req, res, next) => {
 };
 
 const genToken = (id) => jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
+
+const formatTimestamp = (value) => {
+  if (!value) return null;
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  return value;
+};
+
+const hydrateChat = async (chatDoc, currentUserId) => {
+  const session = await getDoc('sessions', chatDoc.sessionId);
+  if (!session) return null;
+
+  const otherUserId = chatDoc.participants.find((participantId) => participantId !== currentUserId);
+  const [otherUser, skill] = await Promise.all([
+    otherUserId ? getDoc('users', otherUserId) : null,
+    session.skill ? getDoc('skills', session.skill) : null,
+  ]);
+
+  return {
+    ...chatDoc,
+    updatedAt: formatTimestamp(chatDoc.updatedAt),
+    otherUser: otherUser ? {
+      id: otherUser.id,
+      name: otherUser.name,
+      profilePhoto: otherUser.profilePhoto || '',
+    } : null,
+    session: {
+      id: session.id,
+      status: session.status,
+      teacher: session.teacher,
+      learner: session.learner,
+      scheduledAt: formatTimestamp(session.scheduledAt),
+      skillTitle: skill?.title || 'Session chat',
+    },
+  };
+};
+
+const ensureChatForSession = async (sessionId) => {
+  const existingSnapshot = await db.collection('chats').where('sessionId', '==', sessionId).limit(1).get();
+  if (!existingSnapshot.empty) {
+    const existingDoc = existingSnapshot.docs[0];
+    return { id: existingDoc.id, ...existingDoc.data() };
+  }
+
+  const session = await getDoc('sessions', sessionId);
+  if (!session) return null;
+  if (session.status !== 'confirmed') return null;
+
+  const chatRef = await db.collection('chats').add({
+    sessionId,
+    participants: [session.teacher, session.learner],
+    lastMessage: '',
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  const chatSnap = await chatRef.get();
+  return { id: chatSnap.id, ...chatSnap.data() };
+};
+
+const ensureParticipantChat = async (chatId, userId) => {
+  const chat = await getDoc('chats', chatId);
+  if (!chat) return null;
+  if (!Array.isArray(chat.participants) || !chat.participants.includes(userId)) return false;
+  return chat;
+};
 
 // ═══════════════════════════════════════════════════════════
 // AUTH ROUTES
@@ -300,7 +365,121 @@ app.put('/api/sessions/:id', protect, async (req, res) => {
     const updated = await updateDoc('sessions', req.params.id, {
       status: req.body.status,
     });
+
+    if (req.body.status === 'confirmed') {
+      await ensureChatForSession(req.params.id);
+    }
+
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/chat/token
+app.get('/api/chat/token', protect, async (req, res) => {
+  try {
+    const firebaseToken = await admin.auth().createCustomToken(req.userId);
+    res.json({ token: firebaseToken });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/chats
+app.get('/api/chats', protect, async (req, res) => {
+  try {
+    const snapshot = await db.collection('chats')
+      .where('participants', 'array-contains', req.userId)
+      .get();
+
+    const chats = await Promise.all(snapshot.docs.map(async (doc) => hydrateChat({ id: doc.id, ...doc.data() }, req.userId)));
+    const sortedChats = chats
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+
+    res.json(sortedChats);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/chat/:sessionId
+app.get('/api/chat/:sessionId', protect, async (req, res) => {
+  try {
+    const session = await getDoc('sessions', req.params.sessionId);
+    if (!session) return res.status(404).json({ message: 'Session not found' });
+    if (![session.teacher, session.learner].includes(req.userId)) {
+      return res.status(403).json({ message: 'Not authorized to access this chat' });
+    }
+    if (session.status !== 'confirmed') {
+      return res.status(403).json({ message: 'Chat is only available for confirmed sessions' });
+    }
+
+    const chat = await ensureChatForSession(req.params.sessionId);
+    const hydrated = await hydrateChat(chat, req.userId);
+    res.json(hydrated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/chat/:chatId/messages
+app.get('/api/chat/:chatId/messages', protect, async (req, res) => {
+  try {
+    const chat = await ensureParticipantChat(req.params.chatId, req.userId);
+    if (chat === null) return res.status(404).json({ message: 'Chat not found' });
+    if (chat === false) return res.status(403).json({ message: 'Not authorized to read these messages' });
+
+    const snapshot = await db.collection('chats')
+      .doc(req.params.chatId)
+      .collection('messages')
+      .orderBy('createdAt', 'asc')
+      .get();
+
+    const messages = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: formatTimestamp(doc.data().createdAt),
+    }));
+
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/chat/:chatId/message
+app.post('/api/chat/:chatId/message', protect, async (req, res) => {
+  try {
+    const text = String(req.body.text || '').trim();
+    if (!text) return res.status(400).json({ message: 'Message text is required' });
+
+    const chat = await ensureParticipantChat(req.params.chatId, req.userId);
+    if (chat === null) return res.status(404).json({ message: 'Chat not found' });
+    if (chat === false) return res.status(403).json({ message: 'Not authorized to send messages here' });
+
+    const messageRef = await db.collection('chats')
+      .doc(req.params.chatId)
+      .collection('messages')
+      .add({
+        senderId: req.userId,
+        text,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        seen: false,
+      });
+
+    await db.collection('chats').doc(req.params.chatId).update({
+      lastMessage: text,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    const messageSnap = await messageRef.get();
+    res.status(201).json({
+      id: messageSnap.id,
+      ...messageSnap.data(),
+      createdAt: formatTimestamp(messageSnap.data().createdAt),
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
