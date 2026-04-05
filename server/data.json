@@ -1,0 +1,159 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "name": "Ayush Pillai",
+      "email": "ayush@example.com",
+      "passwordHash": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+      "bio": "Full-stack developer who loves teaching web development and learning music.",
+      "profilePhoto": "",
+      "skillsOffered": [
+        "s1",
+        "s2"
+      ],
+      "skillsWanted": [
+        "s3"
+      ],
+      "rating": 4.8,
+      "reviewCount": 12,
+      "createdAt": "2024-01-15T10:00:00.000Z"
+    },
+    {
+      "id": "u2",
+      "name": "Priya Nair",
+      "email": "priya@example.com",
+      "passwordHash": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+      "bio": "Graphic designer and illustrator. Can teach design tools and want to learn coding.",
+      "profilePhoto": "",
+      "skillsOffered": [
+        "s3",
+        "s4"
+      ],
+      "skillsWanted": [
+        "s1"
+      ],
+      "rating": 4.5,
+      "reviewCount": 8,
+      "createdAt": "2024-01-20T10:00:00.000Z"
+    },
+    {
+      "id": "u3",
+      "name": "Rahul Menon",
+      "email": "rahul@example.com",
+      "passwordHash": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+      "bio": "Music teacher and guitarist. Looking to learn photography in exchange.",
+      "profilePhoto": "",
+      "skillsOffered": [
+        "s5"
+      ],
+      "skillsWanted": [
+        "s6"
+      ],
+      "rating": 4.9,
+      "reviewCount": 20,
+      "createdAt": "2024-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "1775208815087",
+      "name": "ayush",
+      "email": "ayush@gmail.com",
+      "password": "$2b$10$9sjVLb4uGCVtha1LuW7j3uXAfsDBkR4jG.q7P9q6k3PjrJs1.Mljm",
+      "bio": "",
+      "avatar": "",
+      "createdAt": "2026-04-03T09:33:35.087Z"
+    },
+    {
+      "id": "1775308251662",
+      "name": "Ayush ",
+      "email": "ayush@123gmail.com",
+      "password": "$2b$10$9o5FlfjQ0ov4XrrJN9OAhe4WHu.z20dM2Je/Giznbg5QetfTFfc.e",
+      "bio": "",
+      "avatar": "",
+      "createdAt": "2026-04-04T13:10:51.662Z"
+    }
+  ],
+  "skills": [
+    {
+      "id": "s1",
+      "title": "Web Development",
+      "category": "Technology",
+      "description": "Learn HTML, CSS, JavaScript and React from scratch. Build real projects.",
+      "offeredBy": "u1",
+      "level": "beginner",
+      "tags": [
+        "html",
+        "css",
+        "javascript",
+        "react"
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Python Programming",
+      "category": "Technology",
+      "description": "Python basics to advanced. Data structures, OOP, and small projects.",
+      "offeredBy": "u1",
+      "level": "intermediate",
+      "tags": [
+        "python",
+        "programming",
+        "data"
+      ]
+    },
+    {
+      "id": "s3",
+      "title": "Graphic Design",
+      "category": "Design",
+      "description": "Figma, Illustrator and Photoshop. Logo design, UI mockups and branding.",
+      "offeredBy": "u2",
+      "level": "intermediate",
+      "tags": [
+        "figma",
+        "design",
+        "ui",
+        "photoshop"
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "Digital Illustration",
+      "category": "Design",
+      "description": "Character design and digital art using Procreate and Illustrator.",
+      "offeredBy": "u2",
+      "level": "advanced",
+      "tags": [
+        "illustration",
+        "art",
+        "procreate"
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "Guitar Lessons",
+      "category": "Music",
+      "description": "Acoustic and electric guitar. Beginner to intermediate. Learn chords, strumming and songs.",
+      "offeredBy": "u3",
+      "level": "beginner",
+      "tags": [
+        "guitar",
+        "music",
+        "acoustic"
+      ]
+    },
+    {
+      "id": "s6",
+      "title": "Photography",
+      "category": "Arts",
+      "description": "DSLR photography, composition, lighting and basic editing in Lightroom.",
+      "offeredBy": "u3",
+      "level": "beginner",
+      "tags": [
+        "photography",
+        "camera",
+        "lightroom"
+      ]
+    }
+  ],
+  "sessions": [],
+  "reviews": []
+}
