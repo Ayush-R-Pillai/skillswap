@@ -10,7 +10,12 @@ const {
 } = require('./firebase');
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'skillswap_secret';
@@ -39,7 +44,6 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if email already exists
     const existing = await queryDocs('users', 'email', '==', email);
     if (existing.length > 0) {
       return res.status(400).json({ message: 'Email already registered' });
@@ -105,9 +109,7 @@ app.get('/api/users/me', protect, async (req, res) => {
     const user = await getDoc('users', req.userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Get skills offered by this user
     const skillsOffered = await queryDocs('skills', 'offeredBy', '==', req.userId);
-
     const { passwordHash, ...safeUser } = user;
     res.json({ ...safeUser, skillsOffered });
   } catch (err) {
@@ -122,7 +124,6 @@ app.get('/api/users/:id', async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const skillsOffered = await queryDocs('skills', 'offeredBy', '==', req.params.id);
-
     const { passwordHash, ...safeUser } = user;
     res.json({ ...safeUser, skillsOffered });
   } catch (err) {
@@ -135,8 +136,8 @@ app.put('/api/users/me', protect, async (req, res) => {
   try {
     const { name, bio, profilePhoto } = req.body;
     const updates = {};
-    if (name)                      updates.name = name;
-    if (bio !== undefined)         updates.bio = bio;
+    if (name)                       updates.name = name;
+    if (bio !== undefined)          updates.bio = bio;
     if (profilePhoto !== undefined) updates.profilePhoto = profilePhoto;
 
     const updated = await updateDoc('users', req.userId, updates);
@@ -178,8 +179,8 @@ app.get('/api/skills', async (req, res) => {
         s.tags?.some(t => t.toLowerCase().includes(q))
       );
     }
-    if (category) skills = skills.filter(s => s.category === category);
-    if (level)    skills = skills.filter(s => s.level === level);
+    if (category && category !== 'All') skills = skills.filter(s => s.category === category);
+    if (level && level !== 'All')       skills = skills.filter(s => s.level?.toLowerCase() === level.toLowerCase());
 
     res.json(skills);
   } catch (err) {
@@ -196,7 +197,7 @@ app.post('/api/skills', protect, async (req, res) => {
       title,
       category,
       description,
-      level: level || 'beginner',
+      level: level || 'Beginner',
       tags: tags || [],
       offeredBy: req.userId,
     });
@@ -253,7 +254,6 @@ app.get('/api/sessions/me', protect, async (req, res) => {
       s => s.teacher === req.userId || s.learner === req.userId
     );
 
-    // Populate teacher, learner, skill data
     const populated = await Promise.all(mySessions.map(async (s) => {
       const [teacherData, learnerData, skillData] = await Promise.all([
         getDoc('users', s.teacher),
@@ -306,7 +306,6 @@ app.post('/api/reviews', protect, async (req, res) => {
       comment,
     });
 
-    // Recalculate average rating for reviewee
     const allReviews = await queryDocs('reviews', 'reviewee', '==', revieweeId);
     const avg = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
     await updateDoc('users', revieweeId, {
@@ -341,12 +340,12 @@ app.get('/api/reviews/:userId', async (req, res) => {
   }
 });
 
-// ─── Health check ─────────────────────────────────────────────────────────────
+// ─── Health check ─────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({ message: '🚀 SkillSwap API running with Firebase!', status: 'ok' });
 });
 
-// ─── Start server ─────────────────────────────────────────────────────────────
+// ─── Start server ─────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 SkillSwap server running on port ${PORT}`);
