@@ -4,7 +4,7 @@ import api from '../api/axios'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser]     = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,18 +22,18 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password })
     localStorage.setItem('token', res.data.token)
-    // Fetch full user profile after login
-    const userRes = await api.get('/users/me')
-    setUser(userRes.data)
+    // Always fetch full profile so user.id is the Firebase doc ID
+    const profileRes = await api.get('/users/me')
+    setUser(profileRes.data)
     return res.data
   }
 
   const register = async (name, email, password) => {
     const res = await api.post('/auth/register', { name, email, password })
     localStorage.setItem('token', res.data.token)
-    // Fetch full user profile after register
-    const userRes = await api.get('/users/me')
-    setUser(userRes.data)
+    // Always fetch full profile so user.id is the Firebase doc ID
+    const profileRes = await api.get('/users/me')
+    setUser(profileRes.data)
     return res.data
   }
 
