@@ -10,7 +10,11 @@ const LEVEL_COLORS = { Beginner: '#14B8A6', Intermediate: '#2563EB', Advanced: '
 function SkillCard({ skill, onRequest }) {
   const [hovered, setHovered] = useState(false)
   const color = LEVEL_COLORS[skill.level] || '#2563EB'
-  const initial = skill.user?.name?.[0]?.toUpperCase() || '?'
+
+  // Server returns offeredByUser with name, or fall back to user field
+  const userName = skill.offeredByUser?.name || skill.user?.name || 'Unknown'
+  const initial = userName[0]?.toUpperCase() || '?'
+  const teacherId = skill.offeredBy || skill.userId
 
   return (
     <div
@@ -31,18 +35,25 @@ function SkillCard({ skill, onRequest }) {
           {initial}
         </div>
         <div style={{ minWidth: 0 }}>
-          <p style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{skill.user?.name || 'Unknown'}</p>
+          <p style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             <Star size={12} fill="#FBBF24" color="#FBBF24" />
-            <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>4.9</span>
+            <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>{skill.offeredByUser?.rating || '4.9'}</span>
           </div>
         </div>
       </div>
 
       {/* Title */}
-      <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+      <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.3, margin: 0 }}>
         {skill.title}
       </h4>
+
+      {/* Description */}
+      {skill.description && (
+        <p style={{ fontSize: '0.82rem', color: '#6B7280', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {skill.description}
+        </p>
+      )}
 
       {/* Badges */}
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -52,7 +63,8 @@ function SkillCard({ skill, onRequest }) {
 
       {/* CTA */}
       <button
-        onClick={() => onRequest(skill)}
+        onClick={() => teacherId && onRequest(teacherId)}
+        disabled={!teacherId}
         style={{
           marginTop: 'auto', padding: '9px', borderRadius: '8px',
           background: hovered ? '#14B8A6' : 'transparent',
@@ -60,7 +72,7 @@ function SkillCard({ skill, onRequest }) {
           color: hovered ? '#fff' : '#6B7280',
           fontWeight: 600, fontSize: '0.875rem', transition: 'all 0.2s', cursor: 'pointer',
         }}
-      >Request Session</button>
+      >Request Session →</button>
     </div>
   )
 }
@@ -79,8 +91,9 @@ export default function Browse() {
 
   const filtered = skills.filter(s => {
     const q = search.toLowerCase()
+    const userName = s.offeredByUser?.name || s.user?.name || ''
     return (
-      (!search || s.title.toLowerCase().includes(q) || (s.description || '').toLowerCase().includes(q) || (s.user?.name || '').toLowerCase().includes(q)) &&
+      (!search || s.title?.toLowerCase().includes(q) || (s.description || '').toLowerCase().includes(q) || userName.toLowerCase().includes(q)) &&
       (category === 'All Categories' || s.category === category) &&
       (level === 'All Levels' || s.level === level)
     )
@@ -103,28 +116,21 @@ export default function Browse() {
       {/* Filters */}
       <div style={{ background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '1.25rem 1.5rem' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Search */}
           <div style={{ position: 'relative', flexGrow: 1, minWidth: '200px' }}>
             <Search size={18} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
             <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search for skills or people..."
+              placeholder="Search skills or people..."
               style={{ width: '100%', padding: '10px 14px 10px 40px', border: '2px solid #E5E7EB', borderRadius: '10px', fontSize: '0.9rem', color: '#1A1A1A', background: '#fff', transition: 'border-color 0.15s' }}
               onFocus={e => e.target.style.borderColor = '#2563EB'}
               onBlur={e => e.target.style.borderColor = '#E5E7EB'}
             />
           </div>
-
-          {/* Category */}
           <select value={category} onChange={e => setCategory(e.target.value)} style={{ padding: '10px 14px', border: '2px solid #E5E7EB', borderRadius: '10px', fontSize: '0.875rem', color: '#1A1A1A', background: '#fff', cursor: 'pointer', minWidth: '160px' }}>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
-
-          {/* Level */}
           <select value={level} onChange={e => setLevel(e.target.value)} style={{ padding: '10px 14px', border: '2px solid #E5E7EB', borderRadius: '10px', fontSize: '0.875rem', color: '#1A1A1A', background: '#fff', cursor: 'pointer', minWidth: '140px' }}>
-            {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+            {LEVELS.map(l => <option key={l}>{l}</option>)}
           </select>
-
-          {/* Clear */}
           {hasFilters && (
             <button onClick={clearFilters} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', border: '2px solid #E5E7EB', borderRadius: '10px', background: 'transparent', color: '#6B7280', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' }}>
               <X size={15} /> Clear
@@ -133,16 +139,16 @@ export default function Browse() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Results */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem' }}>
         <p style={{ color: '#6B7280', fontSize: '0.875rem', marginBottom: '1.25rem', fontWeight: 500 }}>
           {loading ? 'Loading...' : `${filtered.length} ${filtered.length === 1 ? 'result' : 'results'} found`}
         </p>
 
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
             {[...Array(8)].map((_, i) => (
-              <div key={i} style={{ height: '200px', borderRadius: '16px', background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+              <div key={i} style={{ height: '220px', borderRadius: '16px', background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -153,9 +159,13 @@ export default function Browse() {
             {hasFilters && <button onClick={clearFilters} style={{ marginTop: '1rem', padding: '9px 20px', border: '1.5px solid #E5E7EB', borderRadius: '8px', background: 'transparent', color: '#2563EB', fontWeight: 600, cursor: 'pointer' }}>Clear Filters</button>}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
             {filtered.map(skill => (
-              <SkillCard key={skill.id} skill={skill} onRequest={s => navigate(`/session/request/${s.userId}`)} />
+              <SkillCard
+                key={skill.id}
+                skill={skill}
+                onRequest={teacherId => navigate(`/session/request/${teacherId}`)}
+              />
             ))}
           </div>
         )}
