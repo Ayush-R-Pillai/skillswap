@@ -1,79 +1,76 @@
-import { useState, useEffect } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Star, X } from 'lucide-react'
+import { ArrowRight, Filter, Search, SlidersHorizontal, Sparkles, Star, X } from 'lucide-react'
 import api from '../api/axios'
 
 const CATEGORIES = ['All Categories', 'Technology', 'Design', 'Music', 'Language', 'Business', 'Other']
 const LEVELS = ['All Levels', 'Beginner', 'Intermediate', 'Advanced']
-const LEVEL_COLORS = { Beginner: '#14B8A6', Intermediate: '#2563EB', Advanced: '#8B5CF6' }
+const LEVEL_COLORS = {
+  Beginner: 'rgba(61, 217, 164, 0.28)',
+  Intermediate: 'rgba(33, 195, 252, 0.28)',
+  Advanced: 'rgba(137, 81, 255, 0.32)',
+}
 
 function SkillCard({ skill, onRequest }) {
-  const [hovered, setHovered] = useState(false)
-  const color = LEVEL_COLORS[skill.level] || '#2563EB'
-
-  // Server returns offeredByUser with name, or fall back to user field
-  const userName = skill.offeredByUser?.name || skill.user?.name || 'Unknown'
-  const initial = userName[0]?.toUpperCase() || '?'
+  const teacherName = skill.offeredByUser?.name || skill.user?.name || 'Unknown Mentor'
+  const initial = teacherName[0]?.toUpperCase() || '?'
   const teacherId = skill.offeredBy || skill.userId
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: '#fff',
-        border: `1.5px solid ${hovered ? '#2563EB30' : '#E5E7EB'}`,
-        borderRadius: '16px', padding: '1.25rem',
-        boxShadow: hovered ? '0 8px 32px rgba(37,99,235,0.1)' : '0 1px 4px rgba(0,0,0,0.05)',
-        transition: 'all 0.2s', transform: hovered ? 'translateY(-4px)' : 'none',
-        display: 'flex', flexDirection: 'column', gap: '10px',
-      }}
-    >
-      {/* Author */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: `linear-gradient(135deg, ${color}30, ${color}60)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color, flexShrink: 0 }}>
-          {initial}
+    <article className="glass-card skill-card hover-lift" style={{ display: 'grid', gap: '16px' }}>
+      <div
+        style={{
+          height: '148px',
+          borderRadius: '20px',
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg, rgba(137,81,255,0.28), rgba(14,67,251,0.24), rgba(33,195,252,0.18))',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <div className="floating-orb" style={{ top: '18%', left: '12%', width: '90px', height: '90px', background: 'radial-gradient(circle, rgba(255,255,255,0.18), transparent 72%)' }} />
+        <div className="floating-orb" style={{ right: '8%', bottom: '8%', width: '70px', height: '70px', background: 'radial-gradient(circle, rgba(33,195,252,0.24), transparent 70%)', animationDelay: '-5s' }} />
+        <div style={{ position: 'absolute', top: '16px', left: '16px' }} className="pill-badge status-confirmed">
+          <Sparkles size={14} />
+          Featured mentor
         </div>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-            <Star size={12} fill="#FBBF24" color="#FBBF24" />
-            <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>{skill.offeredByUser?.rating || '4.9'}</span>
+        <div style={{ position: 'absolute', bottom: '16px', left: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '52px', height: '52px', borderRadius: '18px', display: 'grid', placeItems: 'center', background: 'rgba(255,255,255,0.14)', fontWeight: 800, fontSize: '1.05rem', backdropFilter: 'blur(10px)' }}>
+            {initial}
+          </div>
+          <div>
+            <div style={{ fontWeight: 700 }}>{teacherName}</div>
+            <div style={{ color: 'var(--muted)', fontSize: '0.84rem' }}>1:1 guided session</div>
           </div>
         </div>
       </div>
 
-      {/* Title */}
-      <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.3, margin: 0 }}>
-        {skill.title}
-      </h4>
-
-      {/* Description */}
-      {skill.description && (
-        <p style={{ fontSize: '0.82rem', color: '#6B7280', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {skill.description}
-        </p>
-      )}
-
-      {/* Badges */}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        <span style={{ padding: '3px 10px', background: '#F3F4F6', borderRadius: '6px', fontSize: '0.72rem', color: '#6B7280', fontWeight: 500 }}>{skill.category}</span>
-        <span style={{ padding: '3px 10px', background: `${color}15`, borderRadius: '6px', fontSize: '0.72rem', color, fontWeight: 500 }}>{skill.level}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+        <div>
+          <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '1.12rem', lineHeight: 1.1 }}>{skill.title}</h3>
+          <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: '0.9rem' }}>
+            {skill.description || 'Hands-on coaching with tactical guidance, feedback loops, and clear next steps.'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f8c65f', fontWeight: 700 }}>
+          <Star size={14} fill="currentColor" />
+          <span style={{ color: 'var(--text)' }}>{skill.offeredByUser?.rating || '4.9'}</span>
+        </div>
       </div>
 
-      {/* CTA */}
-      <button
-        onClick={() => teacherId && onRequest(teacherId)}
-        disabled={!teacherId}
-        style={{
-          marginTop: 'auto', padding: '9px', borderRadius: '8px',
-          background: hovered ? '#14B8A6' : 'transparent',
-          border: `1.5px solid ${hovered ? '#14B8A6' : '#E5E7EB'}`,
-          color: hovered ? '#fff' : '#6B7280',
-          fontWeight: 600, fontSize: '0.875rem', transition: 'all 0.2s', cursor: 'pointer',
-        }}
-      >Request Session →</button>
-    </div>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <span className="pill-badge" style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>{skill.category}</span>
+        <span className="pill-badge" style={{ background: LEVEL_COLORS[skill.level] || 'rgba(255,255,255,0.08)', borderColor: 'transparent' }}>{skill.level}</span>
+      </div>
+
+      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>Fast response. Flexible scheduling.</div>
+        <button type="button" onClick={() => teacherId && onRequest(teacherId)} className="gradient-button" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+          Request session
+          <ArrowRight size={16} />
+        </button>
+      </div>
+    </article>
   )
 }
 
@@ -86,90 +83,123 @@ export default function Browse() {
   const [level, setLevel] = useState('All Levels')
 
   useEffect(() => {
-    api.get('/skills').then(r => { setSkills(r.data); setLoading(false) }).catch(() => setLoading(false))
+    api.get('/skills').then((response) => {
+      setSkills(response.data || [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [])
 
-  const filtered = skills.filter(s => {
-    const q = search.toLowerCase()
-    const userName = s.offeredByUser?.name || s.user?.name || ''
-    return (
-      (!search || s.title?.toLowerCase().includes(q) || (s.description || '').toLowerCase().includes(q) || userName.toLowerCase().includes(q)) &&
-      (category === 'All Categories' || s.category === category) &&
-      (level === 'All Levels' || s.level === level)
-    )
-  })
+  const filtered = useMemo(() => {
+    return skills.filter((skill) => {
+      const q = search.toLowerCase()
+      const teacherName = skill.offeredByUser?.name || skill.user?.name || ''
+      return (
+        (!search || skill.title?.toLowerCase().includes(q) || (skill.description || '').toLowerCase().includes(q) || teacherName.toLowerCase().includes(q)) &&
+        (category === 'All Categories' || skill.category === category) &&
+        (level === 'All Levels' || skill.level === level)
+      )
+    })
+  }, [skills, search, category, level])
 
   const hasFilters = search || category !== 'All Categories' || level !== 'All Levels'
-  const clearFilters = () => { setSearch(''); setCategory('All Categories'); setLevel('All Levels') }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFBFC' }}>
-
-      {/* Header */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '2.5rem 1.5rem' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>Browse Skills</h1>
-          <p style={{ color: '#6B7280', fontSize: '0.95rem' }}>Discover talented individuals ready to share their expertise</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '1.25rem 1.5rem' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flexGrow: 1, minWidth: '200px' }}>
-            <Search size={18} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search skills or people..."
-              style={{ width: '100%', padding: '10px 14px 10px 40px', border: '2px solid #E5E7EB', borderRadius: '10px', fontSize: '0.9rem', color: '#1A1A1A', background: '#fff', transition: 'border-color 0.15s' }}
-              onFocus={e => e.target.style.borderColor = '#2563EB'}
-              onBlur={e => e.target.style.borderColor = '#E5E7EB'}
-            />
+    <div className="page-shell">
+      <div className="page-content" style={{ display: 'grid', gap: '22px' }}>
+        <section className="glass-card surface-grid" style={{ padding: '30px', position: 'relative', overflow: 'hidden' }}>
+          <div className="floating-orb" style={{ top: '-18px', right: '14%', width: '170px', height: '170px', background: 'radial-gradient(circle, rgba(137,81,255,0.28), transparent 68%)' }} />
+          <div className="floating-orb" style={{ bottom: '-20px', left: '8%', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(33,195,252,0.22), transparent 68%)', animationDelay: '-6s' }} />
+          <div className="eyebrow">
+            <Filter size={14} />
+            Curated marketplace
           </div>
-          <select value={category} onChange={e => setCategory(e.target.value)} style={{ padding: '10px 14px', border: '2px solid #E5E7EB', borderRadius: '10px', fontSize: '0.875rem', color: '#1A1A1A', background: '#fff', cursor: 'pointer', minWidth: '160px' }}>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-          </select>
-          <select value={level} onChange={e => setLevel(e.target.value)} style={{ padding: '10px 14px', border: '2px solid #E5E7EB', borderRadius: '10px', fontSize: '0.875rem', color: '#1A1A1A', background: '#fff', cursor: 'pointer', minWidth: '140px' }}>
-            {LEVELS.map(l => <option key={l}>{l}</option>)}
-          </select>
-          {hasFilters && (
-            <button onClick={clearFilters} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', border: '2px solid #E5E7EB', borderRadius: '10px', background: 'transparent', color: '#6B7280', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' }}>
-              <X size={15} /> Clear
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: '18px', flexWrap: 'wrap' }}>
+            <div>
+              <h1 className="section-heading">Discover premium skill exchanges</h1>
+              <p className="section-subtitle">Browse mentors, creators, operators, and specialists ready to teach through live sessions.</p>
+            </div>
+            <div className="glass-card soft" style={{ padding: '14px 16px', minWidth: '180px' }}>
+              <div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>Available now</div>
+              <div style={{ marginTop: '4px', fontWeight: 800, fontFamily: 'var(--font-display)', fontSize: '2rem' }}>{loading ? '--' : filtered.length}</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="glass-card" style={{ padding: '22px', display: 'grid', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <SlidersHorizontal size={18} color="#21C3FC" />
+              <span style={{ fontWeight: 700 }}>Filters</span>
+            </div>
+            {hasFilters && (
+              <button type="button" className="ghost-button" onClick={() => {
+                setSearch('')
+                setCategory('All Categories')
+                setLevel('All Levels')
+              }} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <X size={15} />
+                Clear all
+              </button>
+            )}
+          </div>
+
+          <div className="card-grid" style={{ gridTemplateColumns: 'minmax(0, 2fr) repeat(2, minmax(180px, 0.8fr))' }}>
+            <div className="field-shell">
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills or mentors" />
+              <label>Search skills or mentors</label>
+              <Search size={18} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+            </div>
+            <div className="field-shell">
+              <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                {CATEGORIES.map((item) => <option key={item}>{item}</option>)}
+              </select>
+              <label>Category</label>
+            </div>
+            <div className="field-shell">
+              <select value={level} onChange={(event) => setLevel(event.target.value)}>
+                {LEVELS.map((item) => <option key={item}>{item}</option>)}
+              </select>
+              <label>Level</label>
+            </div>
+          </div>
+        </section>
+
+        <section style={{ display: 'grid', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{loading ? 'Loading marketplace...' : `${filtered.length} sessions available`}</div>
+              <div style={{ color: 'var(--muted)', fontSize: '0.86rem' }}>Responsive grid with hover reveals, polished cards, and mentor metadata.</div>
+            </div>
+            <div className="pill-badge status-confirmed">Full width grid</div>
+          </div>
+
+          {loading ? (
+            <div className="browse-grid">
+              {Array.from({ length: 8 }).map((_, index) => <div key={index} className="glass-card skeleton" style={{ minHeight: '290px', borderRadius: '26px' }} />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="glass-card" style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ width: '86px', height: '86px', borderRadius: '28px', margin: '0 auto 16px', display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, rgba(137,81,255,0.24), rgba(33,195,252,0.2))' }}>
+                <Search size={34} />
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.4rem', marginBottom: '8px' }}>Nothing matched your filters</div>
+              <div style={{ color: 'var(--muted)', marginBottom: '18px' }}>Try widening the search, changing the category, or clearing the level filter.</div>
+              {hasFilters && <button type="button" className="secondary-button" onClick={() => {
+                setSearch('')
+                setCategory('All Categories')
+                setLevel('All Levels')
+              }}>Reset filters</button>}
+            </div>
+          ) : (
+            <div className="browse-grid">
+              {filtered.map((skill) => (
+                <SkillCard key={skill.id} skill={skill} onRequest={(teacherId) => navigate(`/session/request/${teacherId}`)} />
+              ))}
+            </div>
           )}
-        </div>
-      </div>
-
-      {/* Results */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem' }}>
-        <p style={{ color: '#6B7280', fontSize: '0.875rem', marginBottom: '1.25rem', fontWeight: 500 }}>
-          {loading ? 'Loading...' : `${filtered.length} ${filtered.length === 1 ? 'result' : 'results'} found`}
-        </p>
-
-        {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
-            {[...Array(8)].map((_, i) => (
-              <div key={i} style={{ height: '220px', borderRadius: '16px', background: 'linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '5rem 0', color: '#6B7280' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-            <p style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: '0.5rem' }}>No skills found</p>
-            <p style={{ fontSize: '0.9rem' }}>Try adjusting your search or filters</p>
-            {hasFilters && <button onClick={clearFilters} style={{ marginTop: '1rem', padding: '9px 20px', border: '1.5px solid #E5E7EB', borderRadius: '8px', background: 'transparent', color: '#2563EB', fontWeight: 600, cursor: 'pointer' }}>Clear Filters</button>}
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
-            {filtered.map(skill => (
-              <SkillCard
-                key={skill.id}
-                skill={skill}
-                onRequest={teacherId => navigate(`/session/request/${teacherId}`)}
-              />
-            ))}
-          </div>
-        )}
+        </section>
       </div>
     </div>
   )
 }
+

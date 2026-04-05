@@ -13,16 +13,18 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/profile/:id" element={<Profile />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/session/request/:id" element={<SessionRequest />} />
-        </Routes>
+        <div className="app-shell">
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/session/request/:id" element={<SessionRequest />} />
+          </Routes>
+        </div>
       </BrowserRouter>
     </AuthProvider>
   )
