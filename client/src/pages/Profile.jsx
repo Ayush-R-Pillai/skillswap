@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Calendar, MapPin, Plus, Sparkles, Star, Trash2, Trophy } from 'lucide-react'
+import { Calendar, ImagePlus, MapPin, Plus, Sparkles, Star, Trash2, Trophy } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 
@@ -25,7 +25,7 @@ function Stars({ rating = 5 }) {
 
 export default function Profile() {
   const { id } = useParams()
-  const { user: authUser } = useAuth()
+  const { user: authUser, refreshUser } = useAuth()
   const [profile, setProfile] = useState(null)
   const [skills, setSkills] = useState([])
   const [reviews, setReviews] = useState([])
@@ -34,6 +34,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false)
   const [bio, setBio] = useState('')
   const [name, setName] = useState('')
+  const [profilePhoto, setProfilePhoto] = useState('')
   const [showAddSkill, setShowAddSkill] = useState(false)
   const [newSkill, setNewSkill] = useState({ title: '', description: '', category: 'Technology', level: 'Beginner' })
 
@@ -48,6 +49,7 @@ export default function Profile() {
       setProfile(userRes.data)
       setBio(userRes.data.bio || '')
       setName(userRes.data.name || '')
+      setProfilePhoto(userRes.data.profilePhoto || '')
       setSkills((skillsRes.data || []).filter((skill) => skill.userId === id || skill.offeredBy === id))
       setReviews(reviewsRes.data || [])
       setLoading(false)
@@ -56,8 +58,9 @@ export default function Profile() {
 
   const saveProfile = async () => {
     try {
-      const response = await api.put('/users/me', { name, bio })
+      const response = await api.put('/users/me', { name, bio, profilePhoto })
       setProfile(response.data)
+      await refreshUser()
       setEditing(false)
     } catch {
       // ignore
@@ -86,6 +89,7 @@ export default function Profile() {
   }
 
   const learningSkills = useMemo(() => reviews.slice(0, 3).map((review, index) => ({ id: review.id || index, title: review.sessionTitle || 'Learning in progress', detail: review.comment || 'Building new capability through shared sessions.' })), [reviews])
+  const avatarLetter = name?.[0]?.toUpperCase() || profile?.name?.[0]?.toUpperCase()
 
   if (loading) {
     return (
@@ -117,8 +121,16 @@ export default function Profile() {
             <div className="eyebrow">Premium profile</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', alignItems: 'flex-end', flexWrap: 'wrap', marginTop: '40px' }}>
               <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                <div style={{ width: '116px', height: '116px', marginBottom: '-62px', borderRadius: '32px', display: 'grid', placeItems: 'center', fontSize: '2.6rem', fontWeight: 800, background: 'linear-gradient(135deg, rgba(11,17,31,0.88), rgba(17,28,54,0.88))', border: '1px solid rgba(255,255,255,0.14)', boxShadow: 'var(--shadow-lg)' }}>
-                  {profile.name?.[0]?.toUpperCase()}
+                <div style={{ width: '116px', height: '116px', marginBottom: '-62px', borderRadius: '32px', overflow: 'hidden', display: 'grid', placeItems: 'center', fontSize: '2.6rem', fontWeight: 800, background: 'linear-gradient(135deg, rgba(11,17,31,0.88), rgba(17,28,54,0.88))', border: '1px solid rgba(255,255,255,0.14)', boxShadow: 'var(--shadow-lg)' }}>
+                  {profile.profilePhoto ? (
+                    <img
+                      src={profile.profilePhoto}
+                      alt={profile.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    avatarLetter
+                  )}
                 </div>
                 <div>
                   <h1 className="section-heading" style={{ margin: 0 }}>{profile.name}</h1>
@@ -148,9 +160,35 @@ export default function Profile() {
           <div style={{ display: 'grid', gap: '22px' }}>
             {editing && isOwn && (
               <div className="glass-card" style={{ padding: '22px', display: 'grid', gap: '12px' }}>
+                <div className="glass-card soft" style={{ padding: '18px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ width: '88px', height: '88px', borderRadius: '24px', overflow: 'hidden', display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, rgba(11,17,31,0.88), rgba(17,28,54,0.88))', border: '1px solid rgba(255,255,255,0.12)' }}>
+                    {profilePhoto ? (
+                      <img
+                        src={profilePhoto}
+                        alt="Profile preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '2rem', fontWeight: 800 }}>{avatarLetter}</span>
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ImagePlus size={16} />
+                      Profile photo
+                    </div>
+                    <div style={{ color: 'var(--muted)', fontSize: '0.86rem' }}>
+                      Paste an image URL to update the avatar shown on your profile and dashboard.
+                    </div>
+                  </div>
+                </div>
                 <div className="field-shell">
                   <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Name" />
                   <label>Display name</label>
+                </div>
+                <div className="field-shell">
+                  <input value={profilePhoto} onChange={(event) => setProfilePhoto(event.target.value)} placeholder="Profile photo URL" />
+                  <label>Profile photo URL</label>
                 </div>
                 <div className="field-shell">
                   <textarea value={bio} onChange={(event) => setBio(event.target.value)} placeholder="Bio" />

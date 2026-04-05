@@ -100,11 +100,18 @@ export default function SessionRequest() {
     if (!canSubmit) return
     setSubmitting(true)
     try {
+      const [timeValue, meridiem] = selectedTime.split(' ')
+      const [rawHour, rawMinute] = timeValue.split(':').map(Number)
+      let hour = rawHour % 12
+      if (meridiem === 'PM') hour += 12
+
+      const scheduledAt = new Date(selectedDate)
+      scheduledAt.setHours(hour, rawMinute, 0, 0)
+
       await api.post('/sessions', {
         teacherId: id,
         skillId: selectedSkill.id,
-        date: selectedDate.toISOString().split('T')[0],
-        time: selectedTime,
+        scheduledAt: scheduledAt.toISOString(),
         notes: message,
       })
       alert('Session request sent successfully.')

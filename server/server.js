@@ -229,14 +229,23 @@ app.delete('/api/skills/:id', protect, async (req, res) => {
 // POST /api/sessions
 app.post('/api/sessions', protect, async (req, res) => {
   try {
-    const { teacherId, skillId, scheduledAt, notes } = req.body;
+    const { teacherId, skillId, scheduledAt, date, time, notes } = req.body;
+    let normalizedScheduledAt = scheduledAt;
+
+    if (!normalizedScheduledAt && date && time) {
+      normalizedScheduledAt = `${date}T${time}`;
+    }
+
+    if (!teacherId || !skillId || !normalizedScheduledAt) {
+      return res.status(400).json({ message: 'teacherId, skillId, and scheduledAt are required' });
+    }
 
     const session = await addDoc('sessions', {
       teacher: teacherId,
       learner: req.userId,
       skill: skillId,
       status: 'pending',
-      scheduledAt,
+      scheduledAt: normalizedScheduledAt,
       notes: notes || '',
     });
 
@@ -279,6 +288,14 @@ app.put('/api/sessions/:id', protect, async (req, res) => {
   try {
     const session = await getDoc('sessions', req.params.id);
     if (!session) return res.status(404).json({ message: 'Session not found' });
+    if (session.teacher !== req.userId) {
+      return res.status(403).json({ message: 'Only the teacher can update this session' });
+    }
+
+    const allowedStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+    if (!allowedStatuses.includes(req.body.status)) {
+      return res.status(400).json({ message: 'Invalid session status' });
+    }
 
     const updated = await updateDoc('sessions', req.params.id, {
       status: req.body.status,

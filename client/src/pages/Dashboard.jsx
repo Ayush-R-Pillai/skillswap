@@ -33,7 +33,7 @@ const LEVEL_GLOW = {
   Advanced: 'rgba(137, 81, 255, 0.32)',
 }
 
-function AvatarEl({ name, size = 44 }) {
+function AvatarEl({ name, photo, size = 44 }) {
   return (
     <div
       style={{
@@ -48,9 +48,18 @@ function AvatarEl({ name, size = 44 }) {
         color: 'white',
         background: 'linear-gradient(135deg, rgba(137,81,255,0.92), rgba(33,195,252,0.86))',
         boxShadow: '0 18px 40px rgba(33, 195, 252, 0.2)',
+        overflow: 'hidden',
       }}
     >
-      {(name || '?')[0].toUpperCase()}
+      {photo ? (
+        <img
+          src={photo}
+          alt={name || 'User'}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        (name || '?')[0].toUpperCase()
+      )}
     </div>
   )
 }
@@ -83,6 +92,7 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState([])
   const [allSkills, setAllSkills] = useState([])
   const [loading, setLoading] = useState(true)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -124,10 +134,12 @@ export default function Dashboard() {
 
   const handleStatus = async (id, status) => {
     try {
-      await api.put(`/sessions/${id}`, { status })
-      setSessions((prev) => prev.map((session) => (session.id === id ? { ...session, status } : session)))
+      setActionError('')
+      const response = await api.put(`/sessions/${id}`, { status })
+      setSessions((prev) => prev.map((session) => (session.id === id ? { ...session, ...response.data } : session)))
     } catch (error) {
       console.error(error)
+      setActionError(error?.response?.data?.message || 'Unable to update this session right now.')
     }
   }
 
@@ -160,7 +172,7 @@ export default function Dashboard() {
                 gap: '12px',
               }}
             >
-              <AvatarEl name={user?.name} size={sidebarCollapsed ? 44 : 48} />
+              <AvatarEl name={user?.name} photo={user?.profilePhoto} size={sidebarCollapsed ? 44 : 48} />
               {!sidebarCollapsed && (
                 <div className="sidebar-copy" style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'SkillSwapper'}</div>
@@ -315,7 +327,10 @@ export default function Dashboard() {
                               <div className="glass-card soft hover-lift" style={{ padding: '16px 18px', display: 'grid', gap: '14px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                                   <div style={{ display: 'flex', gap: '12px', minWidth: 0 }}>
-                                    <AvatarEl name={partnerName} />
+                                    <AvatarEl
+                                      name={partnerName}
+                                      photo={session.teacher === user?.id ? session.learnerData?.profilePhoto : session.teacherData?.profilePhoto}
+                                    />
                                     <div style={{ minWidth: 0 }}>
                                       <div style={{ fontWeight: 700, fontSize: '1rem' }}>{session.skillData?.title || 'Coaching session'}</div>
                                       <div style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>with {partnerName || 'your learning partner'}</div>
@@ -419,6 +434,11 @@ export default function Dashboard() {
                     </div>
                     <div style={{ color: 'var(--muted)', fontSize: '0.86rem' }}>Review or schedule outstanding asks</div>
                   </div>
+                  {actionError && (
+                    <div className="glass-card soft" style={{ padding: '12px 14px', marginBottom: '14px', color: '#ff9bb7' }}>
+                      {actionError}
+                    </div>
+                  )}
                   {pending.length === 0 ? (
                     <div className="glass-card soft" style={{ padding: '28px', textAlign: 'center' }}>
                       <Check size={30} style={{ margin: '0 auto 10px', color: 'var(--success)' }} />
@@ -430,7 +450,7 @@ export default function Dashboard() {
                       {pending.map((session) => (
                         <div key={session.id} className="glass-card soft hover-lift" style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
                           <div style={{ display: 'flex', gap: '12px', minWidth: 0 }}>
-                            <AvatarEl name={session.learnerData?.name} />
+                            <AvatarEl name={session.learnerData?.name} photo={session.learnerData?.profilePhoto} />
                             <div>
                               <div style={{ fontWeight: 700 }}>{session.learnerData?.name || 'Learner'} wants to learn</div>
                               <div style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>{session.skillData?.title || 'Skill session'}</div>
